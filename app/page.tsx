@@ -3,7 +3,7 @@
 import {
   getConfig,
   runStagehand,
-  startBBSSession,
+  startKernelSession,
 } from "@/app/api/stagehand/run";
 import DebuggerIframe from "@/components/stagehand/debuggerIframe";
 import { ConstructorParams } from "@browserbasehq/stagehand";
@@ -27,9 +27,9 @@ export default function Home() {
         "No LLM credentials found. Edit stagehand.config.ts to configure your LLM client."
       );
     }
-    if (!config.hasBrowserbaseCredentials) {
+    if (!config.hasKernelCredentials) {
       warningToShow.push(
-        "No BROWSERBASE_API_KEY or BROWSERBASE_PROJECT_ID found. You will probably want this to run Stagehand in the cloud."
+        "No KERNEL_API_KEY found. You will need this to run Stagehand with Kernel cloud browsers."
       );
     }
     setWarning(warningToShow.join("\n"));
@@ -41,14 +41,11 @@ export default function Home() {
     setRunning(true);
 
     try {
-      if (config.env === "BROWSERBASE") {
-        const { sessionId, debugUrl } = await startBBSSession();
-        setDebugUrl(debugUrl);
-        setSessionId(sessionId);
-        await runStagehand(sessionId);
-      } else {
-        await runStagehand();
-      }
+      // Start Kernel session and get debug URL
+      const { sessionId, debugUrl } = await startKernelSession();
+      setDebugUrl(debugUrl);
+      setSessionId(sessionId);
+      await runStagehand();
     } catch (error) {
       setError((error as Error).message);
     } finally {
@@ -106,28 +103,12 @@ export default function Home() {
           )}
           {sessionId && (
             <a
-              href={`https://www.browserbase.com/sessions/${sessionId}`}
+              href={debugUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="border border-solid transition-colors flex items-center justify-center bg-[#F9F6F4] text-black gap-2 hover:border-[#F7F7F7] hover:text-black text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 group "
             >
-              <div className="relative w-4 h-4">
-                <Image
-                  src="/browserbase_grayscale.svg"
-                  alt="Browserbase"
-                  width={16}
-                  height={16}
-                  className="absolute opacity-0 group-hover:opacity-100 transition-opacity"
-                />
-                <Image
-                  src="/browserbase.svg"
-                  alt="Browserbase"
-                  width={16}
-                  height={16}
-                  className="absolute group-hover:opacity-0 transition-opacity"
-                />
-              </div>
-              View Session on Browserbase
+              View Live Session on Kernel
             </a>
           )}
           <a

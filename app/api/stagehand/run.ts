@@ -41,7 +41,6 @@ export async function runStagehand(cdpUrl?: string, sessionId?: string) {
       kernel = result.kernel;
       localCdpUrl = result.kernelBrowser.cdp_ws_url;
       localSessionId = result.kernelBrowser.session_id;
-      console.log("Live view url: ", result.kernelBrowser.browser_live_view_url);
     }
     
     const stagehand = new Stagehand({
@@ -52,8 +51,8 @@ export async function runStagehand(cdpUrl?: string, sessionId?: string) {
     });
     
     await stagehand.init();
+    // Note: main() handles closing stagehand internally
     await main({ page: stagehand.page, context: stagehand.context, stagehand });
-    await stagehand.close();
   } finally {
     // Clean up Kernel browser if we created it
     if (kernel && localSessionId) {

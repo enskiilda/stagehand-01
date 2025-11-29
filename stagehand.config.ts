@@ -4,23 +4,16 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const StagehandConfig: ConstructorParams = {
-  env: "BROWSERBASE",
-  apiKey: process.env.BROWSERBASE_API_KEY /* API key for authentication */,
-  projectId: process.env.BROWSERBASE_PROJECT_ID /* Project identifier */,
+  env: "LOCAL" /* Using LOCAL with Kernel's cloud browser via CDP URL */,
   debugDom: true /* Enable DOM debugging features */,
   headless: false /* Run browser in headless mode */,
   logger: (message: LogLine) =>
     console.log(logLineToString(message)) /* Custom logging function */,
   domSettleTimeoutMs: 30_000 /* Timeout for DOM to settle in milliseconds */,
-  browserbaseSessionCreateParams: {
-    projectId: process.env.BROWSERBASE_PROJECT_ID!,
-  },
   enableCaching: false /* Enable caching functionality */,
-  browserbaseSessionID:
-    undefined /* Session ID for resuming Browserbase sessions */,
-  modelName: "gpt-4o" /* Name of the model to use */,
+  modelName: "groq/moonshotai/kimi-k2-instruct" /* Groq model with kimi-k2-instruct */,
   modelClientOptions: {
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.GROQ_API_KEY,
   } /* Configuration options for the model client */,
 };
 export default StagehandConfig;

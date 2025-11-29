@@ -17,32 +17,57 @@ import Kernel from "@onkernel/sdk";
 import { Stagehand } from "@browserbasehq/stagehand";
 import { main } from "./main";
 
-export async function runStagehand() {
+// Helper function to create a Kernel browser session
+async function createKernelBrowser() {
   const kernel = new Kernel();
-  
-  // Create a cloud browser session with Kernel
   const kernelBrowser = await kernel.browsers.create({ stealth: true });
+  return { kernel, kernelBrowser };
+}
+
+// Helper function to cleanup Kernel browser session
+async function cleanupKernelBrowser(kernel: Kernel, sessionId: string) {
+  await kernel.browsers.deleteByID(sessionId);
+}
+
+export async function runStagehand(cdpUrl?: string, sessionId?: string) {
+  let kernel: Kernel | null = null;
+  let localSessionId: string | null = null;
+  let localCdpUrl: string = cdpUrl || "";
   
-  console.log("Live view url: ", kernelBrowser.browser_live_view_url);
-  
-  const stagehand = new Stagehand({
-    ...StagehandConfig,
-    localBrowserLaunchOptions: {
-      cdpUrl: kernelBrowser.cdp_ws_url,
-    },
-  });
-  
-  await stagehand.init();
-  await main({ page: stagehand.page, context: stagehand.context, stagehand });
-  await stagehand.close();
-  
-  // Clean up Kernel browser
-  await kernel.browsers.deleteByID(kernelBrowser.session_id);
+  try {
+    // If no CDP URL provided, create a new browser session
+    if (!cdpUrl) {
+      const result = await createKernelBrowser();
+      kernel = result.kernel;
+      localCdpUrl = result.kernelBrowser.cdp_ws_url;
+      localSessionId = result.kernelBrowser.session_id;
+      console.log("Live view url: ", result.kernelBrowser.browser_live_view_url);
+    }
+    
+    const stagehand = new Stagehand({
+      ...StagehandConfig,
+      localBrowserLaunchOptions: {
+        cdpUrl: localCdpUrl,
+      },
+    });
+    
+    await stagehand.init();
+    await main({ page: stagehand.page, context: stagehand.context, stagehand });
+    await stagehand.close();
+  } finally {
+    // Clean up Kernel browser if we created it
+    if (kernel && localSessionId) {
+      await cleanupKernelBrowser(kernel, localSessionId);
+    } else if (sessionId) {
+      // Clean up the session passed to us
+      const cleanupKernel = new Kernel();
+      await cleanupKernelBrowser(cleanupKernel, sessionId);
+    }
+  }
 }
 
 export async function startKernelSession() {
-  const kernel = new Kernel();
-  const kernelBrowser = await kernel.browsers.create({ stealth: true });
+  const { kernelBrowser } = await createKernelBrowser();
   
   return {
     sessionId: kernelBrowser.session_id,

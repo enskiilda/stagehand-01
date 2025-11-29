@@ -42,10 +42,11 @@ export default function Home() {
 
     try {
       // Start Kernel session and get debug URL
-      const { sessionId, debugUrl } = await startKernelSession();
+      const { sessionId, debugUrl, cdpUrl } = await startKernelSession();
       setDebugUrl(debugUrl);
       setSessionId(sessionId);
-      await runStagehand();
+      // Pass the CDP URL and session ID to reuse the same browser session
+      await runStagehand(cdpUrl, sessionId);
     } catch (error) {
       setError((error as Error).message);
     } finally {
